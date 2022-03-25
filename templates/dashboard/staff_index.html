@@ -1,0 +1,69 @@
+{% load crispy_forms_tags %}
+<div class="container" style="margin-left: 225px;">
+    <div>
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        Make Request
+                    </div>
+                        <!-- <marquee behavior="" direction="">
+                            <h6 class="my-4">Note: You Can Order Half of the Available Quantity</h6>
+                        </marquee> -->
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            {{ form|crispy }}
+                            
+                            <input class="btn btn-info btn-block" type="submit" value="Make Request">
+                        </form>
+                    </div>
+                    <div style="padding: auto; margin: auto; text-align: center;">
+                        <span style="color: red; text-align: center;">{{message}}</span>
+                        <span style="color: black; text-align: center;">{{message1}}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        Orders Records
+                    </div>
+                    <div class="card-body">
+                        <table class="table bg-white">
+                            <thead class="bg-info text-white">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <!-- <th scope="col">Email</th> -->
+                                    <th scope="col">Phone No</th>
+                                    <th scope="col">Product</th>
+                                    <!-- <th scope="col">Category</th> -->
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Total Price</th>
+                                    <th scope="col">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                {% if order.staff == user %}                               
+                                <tr>
+                                    <td>{{ order.name }}</td>
+                                    <!-- <td>{{ order.email }}</td> -->
+                                    <td>{{ order.phone_no }}</td>
+                                    <td>{{ order.product.name }}</td>
+                                    <!-- <td>{{ order.product.category }}</td> -->
+                                    <td>{{ order.order_quantity }}</td>
+                                    <td>₹ {{ order.total_price}}</td>
+                                    <td>{{ order.date }}</td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}                                                              
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

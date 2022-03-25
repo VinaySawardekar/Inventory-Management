@@ -1,0 +1,48 @@
+{% extends 'partials/base.html' %}
+{% block title %} My Notifications {% endblock %}
+
+{% block content %}
+{% if user.is_authenticated and user.is_staff and user.is_superuser %}
+{% include 'partials/topnav.html' %}
+{% endif %}
+ <!--Table-->
+ <div class="container" style="padding-left:225px; width:auto ;">
+    <div class="row my-4">
+
+        <div class="col" style="width: 750px;">
+            <table class="table bg-white">
+                <thead class="bg-info">
+                    <tr class="text-white">
+                       
+                        <th scope="col">Notification</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in notif_data_all %}
+                    <tr>                       
+                        <td>{{ data.notification }}</td>
+                        <td>{{ data.date }}</td>
+                        {% if data.is_seen == False %}
+                        <td>
+                            <a href="{% url 'dashboard-my-notification-mark-as-read' data.id%}"><button>Mark as Read</button></a>
+                        </td>
+                        {% else %}
+                        <td>
+                            <img src="../../media/etc/yikKbjr4T.png" alt="" style="height: 20px;">
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}                   
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!--End Table-->
+
+
+{% endblock %}

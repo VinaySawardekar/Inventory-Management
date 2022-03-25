@@ -1,0 +1,53 @@
+{% extends 'partials/base.html' %}
+{% block title %} Home Page {% endblock %}
+
+
+{% block content %}
+{% include 'partials/topnav.html' %}
+<div class="container" style="margin-left: 225px;">
+    <div>
+        <div class="row mt-4">
+            <div class="col" style="padding-left: 100px;">
+                <div class="card">
+                    <div class="card-header">
+                        Order History of {{user_name}}
+                    </div>
+                    <div class="card-body">
+                        <table class="table bg-white">
+                            <thead class="bg-info text-white">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Phone No</th>
+                                    <th scope="col">Product</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Total Price</th>
+                                    <th scope="col">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                {% if order.staff == user_name %}                               
+                                <tr>
+                                    <td>{{ order.name}}</td>
+                                    <td>{{order.email}}</td>
+                                    <td>{{order.phone_no}}</td>
+                                    <td>{{ order.product.name }}</td>
+                                    <td>{{ order.product.category }}</td>
+                                    <td>{{ order.order_quantity }}</td>
+                                    <td>₹ {{ order.total_price }}</td>
+                                    <td>{{ order.date }}</td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}                                                              
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

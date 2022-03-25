@@ -1,0 +1,40 @@
+{% extends 'partials/base.html' %}
+{% block title %} Invoices Page {% endblock %}
+
+
+{% block content %}
+{% if user.is_authenticated %}
+
+<div class="container" style="padding-left: 200px;">
+    <div class="row my-4">
+        <div class="col-md-8">
+            <table class="table bg-white" id="myTable">
+                <thead class="bg-info">
+                    <tr class="text-white">
+                        <th scope="col">Invoice Id</th>
+                        <th scope="col">Activity</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    {% if item.staff == user.username %}
+                    <tr>
+                        <td>{{ item.invoice_id }}</td>
+                        <td>
+                            <a class="btn btn-info btn-sm" href="{% url 'dashboard-invoice-view' item.id%}">View</a>
+                            
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'partials/base.html' %}
+{% block title %} Home Page {% endblock %}
+
+
+{% block content %}
+{% if user.is_authenticated and user.is_staff and user.is_superuser %}
+{% include 'partials/topnav.html' %}
+
+<!-- Topside-->
+ <div class="container" style="padding-left: 225px;">
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    Information
+                </div>
+                <div class="card-body">
+                    <marquee behavior="" direction="">
+                        <h3 class="my-4">Most Trending Product Line is :- <span style="color: red;">{{predict_category}}</span></h3>
+                    </marquee>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    Statistics
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="#">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Staff <i class="fas fa-users"></i></h4>
+                                    <h3>{{ workers_count }}</h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="#">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Products <i class="fas fa-box"></i></h4>
+                                    <h3>{{ products_count }}</h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="#">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Orders <i class="fas fa-shipping-fast"></i></h4>
+                                    <h3>{{ orders_count }}</h3>
+                                </div>
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col" style="padding-top: 15px; max-width: 100%;">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    Recent Order
+                </div>
+                <div class="card-body">
+                    <table class="table bg-white">
+                        <thead class="bg-info">
+                            <tr class="text-white">
+                               
+                                <th scope="col">Product</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Total Price</th>
+                                <th scope="col">Order by</th>
+                                <th scope="col">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for orders in latest_order %}
+                            <tr>                        
+                                <td>{{ orders.product.name }}</td>
+                                <td>{{ orders.product.category }}</td>
+                                <td>{{ orders.order_quantity }}</td>
+                                <td>₹ {{ orders.total_price }}</td>
+                                <td>
+                                    {{ orders.staff.username }}
+                                </td>
+                                <td>
+                                    {{ orders.date }}
+                                </td>
+                            </tr>
+                            {% endfor %}                   
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--End Topside-->
+
+{% else %}
+{% include 'dashboard/staff_index.html'%}
+{% endif %}
+{% endblock %}
+
+
+

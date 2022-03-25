@@ -1,0 +1,51 @@
+{% extends 'partials/base.html' %}
+{% block title %} order Page {% endblock %}
+
+{% block content %}
+{% include 'partials/topnav.html' %}
+
+ <!--Table-->
+ <div class="container" style="padding-left:225px; width:auto ;">
+    <div class="row my-4">
+
+        <div class="col" style="width: 750px;">
+            <table class="table bg-white">
+                <thead class="bg-info">
+                    <tr class="text-white">
+                       
+                        <th scope="col">Product</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Total Price</th>
+                        <th scope="col">Order by</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Activity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orders in orders %}
+                    <tr>                        
+                        <td>{{ orders.product.name }}</td>
+                        <td>{{ orders.product.category }}</td>
+                        <td>{{ orders.order_quantity }}</td>
+                        <td>₹ {{ orders.total_price}}</td>
+                        <td>
+                            {{ orders.staff.username }}
+                        </td>
+                        <td>
+                            {{ orders.date }}
+                        </td>
+                        <td><a class="btn btn-danger btn-sm" href="{% url 'dashboard-order-delete' orders.id%}">Delete</a></td>
+                    </tr>
+                    {% endfor %}                   
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!--End Table-->
+
+{% endblock %}
+
