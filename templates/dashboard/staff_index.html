@@ -14,8 +14,9 @@
                         <form method="POST">
                             {% csrf_token %}
                             {{ form|crispy }}
-                            
-                            <input class="btn btn-info btn-block" type="submit" value="Make Request">
+                            <!-- <button class="btn btn-info btn-block" type="button" >Add to Cart</button> -->
+                            <input class="btn btn-info btn-block" type="submit" value="Add to Cart">
+                            <a class="btn btn-info btn-block" href="{% url 'dashboard-invoice-view' %}">Make Request</a>
                         </form>
                     </div>
                     <div style="padding: auto; margin: auto; text-align: center;">

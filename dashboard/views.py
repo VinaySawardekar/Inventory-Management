@@ -1,4 +1,5 @@
 from itertools import count
+from typing import List
 from urllib import request
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -8,7 +9,7 @@ from .forms import ProductForm, OrderForm, SupplierForm, NotificationForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .filters import ProductFilter
-from .utils import email_notify,generateinvoice
+from .utils import email_notify,generateinvoice, render_to_pdf
 
 # Create your views here.
 
@@ -74,16 +75,16 @@ def index(request):
                 # email_notify(subject,body,to)
                 # messages.success(request, f'Your Request is Placed for Product {str2[0]}')
                 get_invoice, invoice_no , invoice_id = generateinvoice(str2[0], order_quantity,total_price, total_inc_gst, buyer_name, buyer_email, buyer_phone, request.user)
-                subject = 'Order Confirmed' 
+                # subject = 'Order Confirmed' 
                 new_line = '\n'
-                # body = f'Hi {buyer_name} , Your Order is Successfully Placed  for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_price} {new_line} {new_line} Thanks & Regards, {new_line} Inventory System'
-                body = f'Hi {buyer_name} , Your Order is Successfully Placed. {new_line} Here is Your Detailed Invoice:{new_line}{get_invoice}'
-                to = buyer_email
-                email_notify(subject,body,to)
+                # # body = f'Hi {buyer_name} , Your Order is Successfully Placed  for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_price} {new_line} {new_line} Thanks & Regards, {new_line} Inventory System'
+                # body = f'Hi {buyer_name} , Your Order is Successfully Placed. {new_line} Here is Your Detailed Invoice:{new_line}{get_invoice}'
+                # to = buyer_email
+                # email_notify(subject,body,to)
                 messages.success(request, f'Your Request is Placed for Product {str2[0]} , Invoice Id: {invoice_no}')
                 notif = Notification(user=request.user, notification=f'Order is Successfully Placed for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_inc_gst}', visible_to =request.user)
                 notif.save()
-                return redirect('dashboard-invoice-view',pk = invoice_id)
+                return redirect('dashboard-index')
         elif int(order_quantity) > int(pdp_count):
             notif_data_all = Notification.objects.filter(visible_to=request.user)
             notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
@@ -456,26 +457,110 @@ def invoice_delete(request, pk):
     }
     return render(request, 'dashboard/invoice_delete.html', context)
 
-def invoice_view(request, pk):
+def invoice_view(request):
     notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
     notif_data_all = Notification.objects.filter(visible_to=request.user)
     notif_count = Notification.objects.filter(is_seen=False,visible_to=request.user).count()
-    item = Invoices.objects.get(id=pk)
+    item = Invoices.objects.values_list('temp_id', flat=True).order_by('-date')[:1]
+    item_list = Invoices.objects.filter(temp_id=item)
+    # print(item_list)
+
+    # invoice_all = Invoices.objects.get().order_by('-date')[:1]
+    temp_2 = Invoices.objects.values_list('temp_id_2', flat=True).order_by('-date')[:1]
+    for i in temp_2:
+        print(i)
+    
+    Invoices.objects.filter(temp_id_2 = i).update(temp_id_2 = i +1)
     # if request.method=='POST':
     #     item.delete()
     #     messages.error(request , 'Invoice has been deleted Successfully!')
     #     return redirect('dashboard-invoices')
-    gst_amount = item.total_price - item.price
-    price_per_item = item.price/item.order_quantity
+    get_invoices = Invoices.objects.filter(temp_id = item)
+    get_invoices_one = Invoices.objects.filter(temp_id = item)[:1]
+    get_invoices_count = Invoices.objects.filter(temp_id = item).count()
+    # print(get_invoices)
+    list = {
+        'invoice_id':'',
+        'name':'',
+        'email':'',
+        'phone_no':'',
+        'product':[],
+        'date':'',
+        'staff':'',
+        'total_price_inc_gst':'',
+        'total_price':'',
+        'gst_amount':''
+    }
+    for i in get_invoices_one:
+        list['invoice_id']= i.invoice_id
+        list['name'] = i.name
+        list['email'] = i.email
+        list['phone_no'] = i.phone_no
+        list['date'] = i.date
+        list['staff'] = i.staff
+
+    for j in get_invoices:
+        # print(j)
+        price_per_pc = j.price/j.order_quantity
+        list['product'].append({'product_name':j.product , 'product_quant':j.order_quantity, 'price':j.price ,'total_price':j.total_price, 'price_per_pc':price_per_pc})
+
+    sum = 0
+    sum2 = 0
+    for l in get_invoices:
+        sum = sum + l.total_price
+        sum2 = sum2 + l.price
+    gst = sum - sum2
+    list['total_price'] = sum2
+    list['total_price_inc_gst'] = sum
+    list['gst_amount'] = gst
+    # print(list)
+    
+    # gst_amount = item.total_price - item.price
+    # price_per_item = item.price/item.order_quantity
     context = {
-        'price_per_item':int(price_per_item),
-        'gst_amount':gst_amount,
+        # 'price_per_item':int(price_per_item),
+        # 'gst_amount':gst_amount,
         'gst_no':'18AABCU9603R1ZM',
-        'item': item,
+        'item': list,
         'notif_data': notif_data,
         'notif_count': notif_count,
         'notif_data_all': notif_data_all,
     }
+     
+    new_string=''
+    new_line = '\n'
+    for i in list['product']:
+        # print(i)
+        product_name = i['product_name']
+        print(product_name)
+        print(len(product_name))
+        product_quant = i['product_quant']
+        price = i['price']
+        # "{:<15}".format(product_name)
+        new_string = f"{product_name:<40} {product_quant:<22} ₹ {price} {new_line} "+ new_string
+        # new_string % (product_name,product_quant, price)
+    # new_string = MIMEText(new_string,'html')
+        
+    # print(new_string)
+    # html.format(product_name, product_quant, price)
+    # part1 = MIMEText(text, 'plain')
+    # part2 = MIMEText(html, 'html')
+    
+    
+    # body = f"Hi {list['name']} , Your Order is Successfully Placed for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_price} {new_line} {new_line} Thanks & Regards, {new_line} Inventory System"
+    body = f"Hi {list['name']} , Your Order is Successfully Placed. {new_line} Here is Your Detailed Invoice:{new_line} {new_line} INVENTORY MANAGEMENT SYSTEM {new_line} Shivajinagar,Pune {new_line} {new_line} Customer:- {list['name']} {new_line} {list['email']} {new_line} {list['phone_no']} {new_line} {new_line} GSTIN No. - 1234567890GHT {new_line} Invoice No.- {list['invoice_id']}{new_line}{new_line} {'Item':<40} {'Quantity':<22} Price {new_line} {new_string} {new_line} {'SubTotal':<63} ₹ {list['total_price']} {new_line} {'Gst':<62}  18% {new_line} {'Total':<63} ₹ {list['total_price_inc_gst']}  {new_line} {new_line} Staff Name:-{list['staff']} {new_line} Purchased On:- {list['date']} {new_line}{new_line} Thanks. Welcome Again \U0001F601"            
+    print(body)
+    sendTo = f"{list['email']}"
+    # sendTo = "vinaysawardekar99@gmail.com"
+    # Create the root message and fill in the from, to, and subject headers
+    sub= 'Purchase details'
+    
+    # pdf = render_to_pdf('dashboard/pdf.html',context)
+    # print(pdf)
+    email_notify(sub,body=body ,to=sendTo)
+    #rendering the template
+    # return HttpResponse(pdf, content_type='application/pdf')
+    # return render(request, 'dashboard/pdf.html', context)
     return render(request, 'dashboard/invoice_view.html', context)
 
 def myinvoices(request):

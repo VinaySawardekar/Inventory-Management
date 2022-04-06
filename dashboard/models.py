@@ -100,6 +100,8 @@ class Invoices(models.Model):
     price = models.PositiveBigIntegerField(null=True)
     total_price = models.PositiveBigIntegerField(null=True)
     date = models.DateTimeField(auto_now_add=True)
+    temp_id = models.IntegerField(null=True)
+    temp_id_2 = models.IntegerField(null=True)
 
     class Meta:
         verbose_name_plural = 'Invoices'

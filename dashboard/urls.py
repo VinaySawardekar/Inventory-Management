@@ -18,7 +18,7 @@ urlpatterns = [
     path('trends/', views.trends , name='dashboard-trends'),
     path('invoices/', views.getinvoices, name='dashboard-invoices'),
     path('invoice/delete/<int:pk>/', views.invoice_delete, name ='dashboard-invoice-delete'),
-    path('invoice/view/<int:pk>/', views.invoice_view, name ='dashboard-invoice-view'),
+    path('invoice/view/', views.invoice_view, name ='dashboard-invoice-view'),
     path('myinvoices', views.myinvoices, name='dashboard-staff-myinvoice'),
 
     # path('supplier/',views.supplier, name='dashboard-supplier')
