@@ -1,5 +1,6 @@
 from itertools import count
 from typing import List
+from unicodedata import name
 from urllib import request
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -38,6 +39,7 @@ def index(request):
         total_price= int(price) * int(order_quantity) 
         total_inc_gst = int(total_price + (18*total_price/100))
         pdp_count = str2[1]
+
 
         if int(pdp_count) == 0:
             context={
@@ -84,7 +86,7 @@ def index(request):
                 messages.success(request, f'Your Request is Placed for Product {str2[0]} , Invoice Id: {invoice_no}')
                 notif = Notification(user=request.user, notification=f'Order is Successfully Placed for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_inc_gst}', visible_to =request.user)
                 notif.save()
-                return redirect('dashboard-index')
+                return redirect('dashboard-add-to-cart')
         elif int(order_quantity) > int(pdp_count):
             notif_data_all = Notification.objects.filter(visible_to=request.user)
             notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
@@ -121,8 +123,13 @@ def index(request):
                 'notif_data_all': notif_data_all,
                 'predict_category':predict_category
             }
-        return render(request, 'dashboard/index.html', context)
+        return render(request, 'dashboard/addtocart.html', context)
     else:
+        latest_order = Order.objects.all().order_by('-date')[:1]
+        # print(latest_order)
+        for i in latest_order:
+            print(i.name, i.email)
+        # form = OrderForm(initial={'name':i.name, 'email':i.email, 'phone_no':i.phone_no})
         form = OrderForm()
 
     notif_data_all = Notification.objects.filter(visible_to=request.user)
@@ -140,9 +147,166 @@ def index(request):
         'notif_count': notif_count,
         'notif_data_all': notif_data_all,
         'predict_category':predict_category
-  }
+}
     return render(request, 'dashboard/index.html', context)
 
+def addtocart(request):
+    orders = Order.objects.all()
+    products = Product.objects.all()
+    orders_count = orders.count()
+    product_count = Product.objects.all().count()
+    workers_count = User.objects.all().count()
+    latest_order = Order.objects.all().order_by('-date')[:4]
+    predict_category = predict()
+    latest_order = Order.objects.all().order_by('-date')[:1]
+    # print(latest_order)
+
+    if request.method=='POST':
+        form = OrderForm(request.POST)
+        product_id = request.POST['product']
+        order_quantity =  request.POST['order_quantity']
+        buyer_name = request.POST['name']
+        buyer_email = request.POST['email']
+        buyer_phone = request.POST['phone_no']
+        product = Product.objects.filter(pk = product_id)
+        str1 = product[0]
+        str2 = str(str1).split('-')
+        price = str2[2]
+        price = price.replace('₹', '')
+        total_price= int(price) * int(order_quantity) 
+        total_inc_gst = int(total_price + (18*total_price/100))
+        pdp_count = str2[1]
+
+
+        if int(pdp_count) == 0:
+            context={
+                'message':'Out of Stock. Please Order Another Product',
+                'orders':orders,
+                'form':form,
+                'products': products,
+                'products_count':product_count,
+                'workers_count':workers_count,
+                'orders_count':orders_count,
+                'latest_order':latest_order,
+                'predict_category':predict_category
+            }
+        elif int(order_quantity)<=int(pdp_count):
+            if form.is_valid():
+                remain_count = int(pdp_count)-int(order_quantity)
+                if int(remain_count) < 30:
+                    subject = f'Please Restock Your Product: {str2[0]} ' 
+                    body = f'Hi Admin , Your Stock quantity of the product {str2[0]} is  "{int(pdp_count) - int(order_quantity)}". Please Re-stock it as soon as possible.'
+                    to = 'pooja.mane101099@gmail.com'
+                    email_notify(subject,body,to)
+                    notif = Notification(user=request.user, notification=f'Your Stock quantity of the product {str2[0]} is  "{int(pdp_count) - int(order_quantity)}". Please Re-stock it as soon as possible.', visible_to ='Admin')
+                    notif.save()
+                instance = form.save(commit=False)
+                instance.staff = request.user
+                instance.total_price = int(total_inc_gst)
+                update_product = Product.objects.get(pk = product_id)
+                update_product.quantity = remain_count
+                update_product.save()
+                instance.save()
+                # subject = 'Order Confirmed' 
+                # new_line = '\n'
+                # body = f'Hi {buyer_name} , Your Order is Successfully Placed for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_price} {new_line} {new_line} Thanks & Regards, {new_line} Inventory System'
+                # to = buyer_email
+                # email_notify(subject,body,to)
+                # messages.success(request, f'Your Request is Placed for Product {str2[0]}')
+                get_invoice, invoice_no , invoice_id = generateinvoice(str2[0], order_quantity,total_price, total_inc_gst, buyer_name, buyer_email, buyer_phone, request.user)
+                # subject = 'Order Confirmed' 
+                new_line = '\n'
+                # # body = f'Hi {buyer_name} , Your Order is Successfully Placed  for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_price} {new_line} {new_line} Thanks & Regards, {new_line} Inventory System'
+                # body = f'Hi {buyer_name} , Your Order is Successfully Placed. {new_line} Here is Your Detailed Invoice:{new_line}{get_invoice}'
+                # to = buyer_email
+                # email_notify(subject,body,to)
+                messages.success(request, f'Your Request is Placed for Product {str2[0]} , Invoice Id: {invoice_no}')
+                notif = Notification(user=request.user, notification=f'Order is Successfully Placed for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_inc_gst}', visible_to =request.user)
+                notif.save()
+                return redirect('dashboard-add-to-cart')
+        elif int(order_quantity) > int(pdp_count):
+            notif_data_all = Notification.objects.filter(visible_to=request.user)
+            notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
+            notif_count = Notification.objects.filter(is_seen=False,visible_to=request.user).count()
+            context={
+                'message':'Quantity Limit Exceed. You Can Order Max to Half of the Available quantity',
+                'orders':orders,
+                'form':form,
+                'products': products,
+                'products_count':product_count,
+                'workers_count':workers_count,
+                'orders_count':orders_count,
+                'latest_order':latest_order,
+                'notif_data': notif_data,
+                'notif_count': notif_count,
+                'notif_data_all': notif_data_all,
+                'predict_category':predict_category
+            }
+        else:
+            notif_data_all = Notification.objects.filter(visible_to=request.user)
+            notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
+            notif_count = Notification.objects.filter(is_seen=False,visible_to=request.user).count()
+            context={
+                'message1':f'Quantity Limit Exceed. You can order {pdp_count} quantity of {str2[0]} .',
+                'orders':orders,
+                'form':form,
+                'products': products,
+                'products_count':product_count,
+                'workers_count':workers_count,
+                'orders_count':orders_count,
+                'latest_order':latest_order,
+                'notif_data': notif_data,
+                'notif_count': notif_count,
+                'notif_data_all': notif_data_all,
+                'predict_category':predict_category
+            }
+        return render(request, 'dashboard/addtocart.html', context)
+    else:
+        # latest_order = Order.objects.all().order_by('-date')[:1]
+        # # print(latest_order)
+        # for i in latest_order:
+        #     print(i.name, i.email)
+        # form = OrderForm(initial={'name':i.name, 'email':i.email, 'phone_no':i.phone_no})
+        # form = OrderForm()
+
+#     notif_data_all = Notification.objects.filter(visible_to=request.user)
+#     notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
+#     notif_count = Notification.objects.filter(is_seen=False,visible_to=request.user).count()
+#     context={
+#         'orders':orders,
+#         'form':form,
+#         'products': products,
+#         'products_count':product_count,
+#         'workers_count':workers_count,
+#         'orders_count':orders_count,
+#         'latest_order':latest_order,
+#         'notif_data': notif_data,
+#         'notif_count': notif_count,
+#         'notif_data_all': notif_data_all,
+#         'predict_category':predict_category
+# }
+#     return render(request, 'dashboard/index.html', context)
+
+        for i in latest_order:
+            print(i.name, i.email)
+        form = OrderForm(initial={'name':i.name, 'email':i.email, 'phone_no':i.phone_no})
+        notif_data_all = Notification.objects.filter(visible_to=request.user)
+        notif_data = Notification.objects.filter(is_seen=False,visible_to=request.user).order_by('-date')[:1]
+        notif_count = Notification.objects.filter(is_seen=False,visible_to=request.user).count()
+        context={
+            'orders':orders,
+            'form':form,
+            'products': products,
+            'products_count':product_count,
+            'workers_count':workers_count,
+            'orders_count':orders_count,
+            'latest_order':latest_order,
+            'notif_data': notif_data,
+            'notif_count': notif_count,
+            'notif_data_all': notif_data_all,
+            'predict_category':predict_category
+    }
+        return render(request, 'dashboard/addtocart.html', context)
 
 
 @login_required
@@ -537,10 +701,11 @@ def invoice_view(request):
         product_quant = i['product_quant']
         price = i['price']
         # "{:<15}".format(product_name)
-        new_string = f"{product_name:<40} {product_quant:<22} ₹ {price} {new_line} "+ new_string
+        new_string = f"{product_name:<40} {product_quant:<22} ₹ {price} {new_line}" + f" {new_string}"
+        
         # new_string % (product_name,product_quant, price)
     # new_string = MIMEText(new_string,'html')
-        
+    print(new_string)   
     # print(new_string)
     # html.format(product_name, product_quant, price)
     # part1 = MIMEText(text, 'plain')
@@ -548,8 +713,8 @@ def invoice_view(request):
     
     
     # body = f"Hi {list['name']} , Your Order is Successfully Placed for Product:- {str2[0]} {new_line} Quantity :- {int(order_quantity)} {new_line} Total Amount(Inc. Gst) :- ₹ {total_price} {new_line} {new_line} Thanks & Regards, {new_line} Inventory System"
-    body = f"Hi {list['name']} , Your Order is Successfully Placed. {new_line} Here is Your Detailed Invoice:{new_line} {new_line} INVENTORY MANAGEMENT SYSTEM {new_line} Shivajinagar,Pune {new_line} {new_line} Customer:- {list['name']} {new_line} {list['email']} {new_line} {list['phone_no']} {new_line} {new_line} GSTIN No. - 1234567890GHT {new_line} Invoice No.- {list['invoice_id']}{new_line}{new_line} {'Item':<40} {'Quantity':<22} Price {new_line} {new_string} {new_line} {'SubTotal':<63} ₹ {list['total_price']} {new_line} {'Gst':<62}  18% {new_line} {'Total':<63} ₹ {list['total_price_inc_gst']}  {new_line} {new_line} Staff Name:-{list['staff']} {new_line} Purchased On:- {list['date']} {new_line}{new_line} Thanks. Welcome Again \U0001F601"            
-    print(body)
+    body = f"Hi {list['name']} , Your Order is Successfully Placed. {new_line} Here is Your Detailed Invoice:{new_line} {new_line} INVENTORY MANAGEMENT SYSTEM {new_line} Shivajinagar,Pune {new_line} {new_line} Customer:- {list['name']} {new_line} {list['email']} {new_line} {list['phone_no']} {new_line} {new_line} GSTIN No. - 1234567890GHT {new_line} Invoice No.- {list['invoice_id']}{new_line}{new_line} {'Item':<40} {'Quantity':<22} Price {new_line} {new_string} {new_line} {'SubTotal':<63} ₹ {list['total_price']} {new_line} {'Gst':<65}  18% {new_line} {'Total':<67} ₹ {list['total_price_inc_gst']}  {new_line} {new_line} Staff Name:-{list['staff']} {new_line} Purchased On:- {list['date']} {new_line}{new_line} Thanks. Welcome Again \U0001F601"            
+    # print(body)
     sendTo = f"{list['email']}"
     # sendTo = "vinaysawardekar99@gmail.com"
     # Create the root message and fill in the from, to, and subject headers
