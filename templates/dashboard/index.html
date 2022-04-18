@@ -97,6 +97,23 @@
         </div>
     </div>
 </div>
+<br>
+<div class="container" style="padding-left: 225px;">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            Trending Product
+        </div>
+        <div class="card-body">
+            <marquee behavior="" direction="">
+                {% if festival == 'Offers & Discounts' %}
+                <h3 class="my-4">{{festival}} is <span style="color: Red;">Live</span> & Trending Product is :- <span style="color: red;"> {{predict_product}} </span></h3>
+                {% else %}
+                <h3 class="my-4">Upcoming Festival is <span style="color: Red;">{{festival}}</span> & Trending Product is :- <span style="color: red;"> {{predict_product}} </span></h3>
+                {% endif %}
+            </marquee>
+        </div>
+    </div>
+</div>
 <!--End Topside-->
 
 {% else %}

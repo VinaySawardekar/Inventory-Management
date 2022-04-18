@@ -22,7 +22,7 @@ def index(request):
     product_count = Product.objects.all().count()
     workers_count = User.objects.all().count()
     latest_order = Order.objects.all().order_by('-date')[:4]
-    predict_category = predict()
+    predict_category,predict_product,festeev  = predict()
 
     if request.method=='POST':
         form = OrderForm(request.POST)
@@ -51,7 +51,9 @@ def index(request):
                 'workers_count':workers_count,
                 'orders_count':orders_count,
                 'latest_order':latest_order,
-                'predict_category':predict_category
+                'predict_category':predict_category,
+                'predict_product':predict_product,
+                 'festival':festeev
             }
         elif int(order_quantity)<=int(pdp_count):
             if form.is_valid():
@@ -103,7 +105,9 @@ def index(request):
                 'notif_data': notif_data,
                 'notif_count': notif_count,
                 'notif_data_all': notif_data_all,
-                'predict_category':predict_category
+                'predict_category':predict_category,
+                'predict_product':predict_product,
+                'festival':festeev
             }
         else:
             notif_data_all = Notification.objects.filter(visible_to=request.user)
@@ -121,7 +125,9 @@ def index(request):
                 'notif_data': notif_data,
                 'notif_count': notif_count,
                 'notif_data_all': notif_data_all,
-                'predict_category':predict_category
+                'predict_category':predict_category,
+                'predict_product':predict_product,
+                'festival':festeev
             }
         return render(request, 'dashboard/addtocart.html', context)
     else:
@@ -146,7 +152,9 @@ def index(request):
         'notif_data': notif_data,
         'notif_count': notif_count,
         'notif_data_all': notif_data_all,
-        'predict_category':predict_category
+        'predict_category':predict_category,
+        'predict_product':predict_product,
+        'festival':festeev
 }
     return render(request, 'dashboard/index.html', context)
 
@@ -157,7 +165,7 @@ def addtocart(request):
     product_count = Product.objects.all().count()
     workers_count = User.objects.all().count()
     latest_order = Order.objects.all().order_by('-date')[:4]
-    predict_category = predict()
+    predict_category,predict_product = predict()
     latest_order = Order.objects.all().order_by('-date')[:1]
     # print(latest_order)
 
@@ -188,7 +196,8 @@ def addtocart(request):
                 'workers_count':workers_count,
                 'orders_count':orders_count,
                 'latest_order':latest_order,
-                'predict_category':predict_category
+                'predict_category':predict_category,
+                'predict_product':predict_product
             }
         elif int(order_quantity)<=int(pdp_count):
             if form.is_valid():
@@ -240,7 +249,8 @@ def addtocart(request):
                 'notif_data': notif_data,
                 'notif_count': notif_count,
                 'notif_data_all': notif_data_all,
-                'predict_category':predict_category
+                'predict_category':predict_category,
+                'predict_product':predict_product
             }
         else:
             notif_data_all = Notification.objects.filter(visible_to=request.user)
@@ -258,7 +268,8 @@ def addtocart(request):
                 'notif_data': notif_data,
                 'notif_count': notif_count,
                 'notif_data_all': notif_data_all,
-                'predict_category':predict_category
+                'predict_category':predict_category,
+                'predict_product':predict_product
             }
         return render(request, 'dashboard/addtocart.html', context)
     else:
@@ -304,7 +315,8 @@ def addtocart(request):
             'notif_data': notif_data,
             'notif_count': notif_count,
             'notif_data_all': notif_data_all,
-            'predict_category':predict_category
+            'predict_category':predict_category,
+            'predict_product':predict_product
     }
         return render(request, 'dashboard/addtocart.html', context)
 
@@ -569,16 +581,20 @@ def predict():
     df['category_encoded']= category_encoded
     reg = linear_model.LinearRegression()
     reg.fit(df[['Date','category_encoded']],df.Price)
+    # print(df.head(10))
     from datetime import datetime
     currentMonth = datetime.now().month
+    # currentMonth = 10
     price = []
     for i in range(0,6):
         predict = reg.predict([[currentMonth,i]])
         price.append(predict)
-
+    # print(price)
     max_value = max(price)
     max_index = price.index(max_value)
-    if max_index == 1:
+    if max_index == 0:
+        cat = 'Electronic accessories'
+    elif max_index == 1:
         cat = 'Fashion accessories'
     elif max_index == 2:
         cat = 'Food and beverages'
@@ -589,7 +605,84 @@ def predict():
     elif max_index == 5:
         cat = 'Sports and travel'
     
-    return cat
+
+    df = pd.read_csv('festival.csv')
+
+    le = LabelEncoder()
+    product_encoded = le.fit_transform(df['Product'])
+    # festival_encoded = le.fit_transform(df['Festival'])
+    df['product_encoded']= product_encoded
+    # df['festival_encoded'] = festival_encoded
+    reg = linear_model.LinearRegression()
+    reg.fit(df[['Date_Month','product_encoded']],df.Quantity)
+    # print(df.head())
+    from datetime import datetime
+    currentMonth = datetime.now().month
+    price = []
+    for i in range(1,16):
+        predict = reg.predict([[currentMonth,i]])
+        price.append(predict)
+    # print(price)
+    max_value = max(price)
+    max_index = price.index(max_value)
+    prod_name = ''
+    if max_index == 0:
+        prod_name = 'AC'
+    elif max_index == 1:
+        prod_name = 'Beverages'
+    elif max_index == 2:
+        prod_name = 'Chocolates'
+    elif max_index == 3:
+        prod_name = 'Clothes'
+    elif max_index == 4:
+        prod_name = 'Cosmetics'
+    elif max_index == 5:
+        prod_name = 'Decor'
+    elif max_index == 6:
+        prod_name = 'Fridge'
+    elif max_index == 7:
+        prod_name = 'HouseHold Products'
+    elif max_index == 8:
+        prod_name = 'Luggage Bag'
+    elif max_index == 9:
+        prod_name = 'Mobiles'
+    elif max_index == 10:
+        prod_name = 'Nutritional Products'
+    elif max_index == 11:
+        prod_name = 'Perfume'
+    elif max_index == 12 :
+        prod_name = 'Shoes'
+    elif max_index == 13:
+        prod_name = 'Sports Bag'
+    elif max_index == 14:
+        prod_name = 'Sweets'
+    elif max_index == 15:
+        prod_name = 'TV'
+
+
+    #Festival
+    Electronic = ['AC', 'TV', 'Fridge', 'Mobiles',]
+    Ganesh = ['Sweets','Decor']
+    Navratri = ['Clothes','Decor']
+    Rakshabhandhan = ['Sweets', 'Clothes']
+    Holi = ['Sweets', 'Clothes']
+    festeev=''
+
+    if prod_name in Ganesh and currentMonth == 9:
+        festeev = 'Ganesh Chathurthi'
+    elif prod_name in Navratri and currentMonth == 10:
+        festeev = 'Navratri'
+    elif prod_name in Rakshabhandhan and currentMonth == 8:
+        festeev = 'Rakshabhandhan'
+    elif prod_name in Holi and currentMonth == 3:
+        festeev = 'Holi'
+    elif prod_name in Electronic and currentMonth == 11:
+        festeev = 'Diwali'
+    else:
+        festeev = 'Offers & Discounts'
+    
+
+    return cat,prod_name,festeev
     
 
 def getinvoices(request):
