@@ -618,6 +618,7 @@ def predict():
     # print(df.head())
     from datetime import datetime
     currentMonth = datetime.now().month
+    # currentMonth = 8
     price = []
     for i in range(1,16):
         predict = reg.predict([[currentMonth,i]])
