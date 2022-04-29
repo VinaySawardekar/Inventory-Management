@@ -165,7 +165,7 @@ def addtocart(request):
     product_count = Product.objects.all().count()
     workers_count = User.objects.all().count()
     latest_order = Order.objects.all().order_by('-date')[:4]
-    predict_category,predict_product = predict()
+    predict_category,predict_product,festeev = predict()
     latest_order = Order.objects.all().order_by('-date')[:1]
     # print(latest_order)
 
