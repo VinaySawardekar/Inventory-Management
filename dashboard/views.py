@@ -10,7 +10,7 @@ from .forms import ProductForm, OrderForm, SupplierForm, NotificationForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .filters import ProductFilter
-from .utils import email_notify,generateinvoice, render_to_pdf
+from .utils import Predict,predicT, email_notify,generateinvoice, render_to_pdf
 
 # Create your views here.
 
@@ -583,28 +583,18 @@ def predict():
     reg.fit(df[['Date','category_encoded']],df.Price)
     # print(df.head(10))
     from datetime import datetime
+    import random
     currentMonth = datetime.now().month
-    # currentMonth = 10
+    # currentMonth = 9
     price = []
     for i in range(0,6):
         predict = reg.predict([[currentMonth,i]])
         price.append(predict)
     # print(price)
-    max_value = max(price)
+    max_value = random.choice(price)
     max_index = price.index(max_value)
-    if max_index == 0:
-        cat = 'Electronic accessories'
-    elif max_index == 1:
-        cat = 'Fashion accessories'
-    elif max_index == 2:
-        cat = 'Food and beverages'
-    elif max_index == 3:
-        cat = 'Health and beauty'
-    elif max_index == 4:
-        cat = 'Home and lifestyle'
-    elif max_index == 5:
-        cat = 'Sports and travel'
-    
+    print(max_index)
+    cat = Predict(index=currentMonth)    
 
     df = pd.read_csv('festival.csv')
 
@@ -618,7 +608,8 @@ def predict():
     # print(df.head())
     from datetime import datetime
     currentMonth = datetime.now().month
-    # currentMonth = 8
+    max_Index = datetime.now().month
+    # max_Index = 8
     price = []
     for i in range(1,16):
         predict = reg.predict([[currentMonth,i]])
@@ -627,57 +618,25 @@ def predict():
     max_value = max(price)
     max_index = price.index(max_value)
     prod_name = ''
-    if max_index == 0:
-        prod_name = 'AC'
-    elif max_index == 1:
-        prod_name = 'Beverages'
-    elif max_index == 2:
-        prod_name = 'Chocolates'
-    elif max_index == 3:
-        prod_name = 'Clothes'
-    elif max_index == 4:
-        prod_name = 'Cosmetics'
-    elif max_index == 5:
-        prod_name = 'Decor'
-    elif max_index == 6:
-        prod_name = 'Fridge'
-    elif max_index == 7:
-        prod_name = 'HouseHold Products'
-    elif max_index == 8:
-        prod_name = 'Luggage Bag'
-    elif max_index == 9:
-        prod_name = 'Mobiles'
-    elif max_index == 10:
-        prod_name = 'Nutritional Products'
-    elif max_index == 11:
-        prod_name = 'Perfume'
-    elif max_index == 12 :
-        prod_name = 'Shoes'
-    elif max_index == 13:
-        prod_name = 'Sports Bag'
-    elif max_index == 14:
-        prod_name = 'Sweets'
-    elif max_index == 15:
-        prod_name = 'TV'
-
-
+    prod_name = predicT(max_Index)
+    
     #Festival
-    Electronic = ['AC', 'TV', 'Fridge', 'Mobiles',]
+    Electronic = ['AC', 'TV', 'Fridge', 'Mobiles','Decor']
     Ganesh = ['Sweets','Decor']
     Navratri = ['Clothes','Decor']
     Rakshabhandhan = ['Sweets', 'Clothes']
-    Holi = ['Sweets', 'Clothes']
+    Holi = ['Sweets', 'Clothes','Herbal Colors']
     festeev=''
 
-    if prod_name in Ganesh and currentMonth == 9:
+    if prod_name in Ganesh and max_Index == 9:
         festeev = 'Ganesh Chathurthi'
-    elif prod_name in Navratri and currentMonth == 10:
+    elif prod_name in Navratri and max_Index == 10:
         festeev = 'Navratri'
-    elif prod_name in Rakshabhandhan and currentMonth == 8:
+    elif prod_name in Rakshabhandhan and max_Index == 8:
         festeev = 'Rakshabhandhan'
-    elif prod_name in Holi and currentMonth == 3:
+    elif prod_name in Holi and max_Index == 3:
         festeev = 'Holi'
-    elif prod_name in Electronic and currentMonth == 11:
+    elif prod_name in Electronic and max_Index == 11:
         festeev = 'Diwali'
     else:
         festeev = 'Offers & Discounts'

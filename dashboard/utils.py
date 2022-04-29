@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.base import MIMEBase
+from user.utils import predict, PredicT
 
 def email_notify(subject,body,to):
     # msg = MIMEMultipart('alternative')
@@ -65,4 +66,12 @@ def render_to_pdf(template_src, context_dict={}):
         #  return pdf
          return HttpResponse(result.getvalue(), content_type='application/pdf')
      return None
- 
+
+
+def Predict(index):
+    cat = predict(index)
+    return cat
+
+def predicT(index):
+    prod_name = PredicT(index)
+    return prod_name
